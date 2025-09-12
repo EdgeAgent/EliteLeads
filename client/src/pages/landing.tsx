@@ -172,7 +172,7 @@ export default function Landing() {
                 onClick={() => window.location.href = "/api/login"}
                 data-testid="button-start-free"
               >
-                Start with 100 Free Credits
+                Start with 25 Free Credits
               </Button>
             </CardContent>
           </Card>
