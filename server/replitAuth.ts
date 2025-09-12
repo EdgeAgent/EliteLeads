@@ -84,8 +84,12 @@ export async function setupAuth(app: Express) {
     verified(null, user);
   };
 
-  for (const domain of process.env
-    .REPLIT_DOMAINS!.split(",")) {
+  // Register strategies for all domains (including custom domains)
+  const allDomains = process.env.REPLIT_DOMAINS!.split(",");
+  const customDomains = ["eliteleads.pro"]; // Add custom domains here
+  const domains = [...allDomains, ...customDomains];
+  
+  for (const domain of domains) {
     const strategy = new Strategy(
       {
         name: `replitauth:${domain}`,
@@ -102,8 +106,15 @@ export async function setupAuth(app: Express) {
   passport.deserializeUser((user: Express.User, cb) => cb(null, user));
 
   app.get("/api/login", (req, res, next) => {
-    // Use the first domain from REPLIT_DOMAINS as the strategy name
-    const strategyDomain = process.env.REPLIT_DOMAINS!.split(",")[0];
+    // Use domain-aware strategy selection (including custom domains)
+    const allDomains = process.env.REPLIT_DOMAINS!.split(",");
+    const customDomains = ["eliteleads.pro"];
+    const domains = [...allDomains, ...customDomains];
+    const host = req.hostname;
+    const strategyDomain = domains.includes(host) ? host : allDomains[0];
+    
+    console.log(`[AUTH] Login attempt: hostname=${host}, available_domains=${domains}, using strategy=${strategyDomain}`);
+    
     passport.authenticate(`replitauth:${strategyDomain}`, {
       prompt: "login consent",
       scope: ["openid", "email", "profile", "offline_access"],
@@ -111,8 +122,15 @@ export async function setupAuth(app: Express) {
   });
 
   app.get("/api/callback", (req, res, next) => {
-    // Use the first domain from REPLIT_DOMAINS as the strategy name
-    const strategyDomain = process.env.REPLIT_DOMAINS!.split(",")[0];
+    // Use domain-aware strategy selection (same logic as login)
+    const allDomains = process.env.REPLIT_DOMAINS!.split(",");
+    const customDomains = ["eliteleads.pro"];
+    const domains = [...allDomains, ...customDomains];
+    const host = req.hostname;
+    const strategyDomain = domains.includes(host) ? host : allDomains[0];
+    
+    console.log(`[AUTH] Callback: hostname=${host}, available_domains=${domains}, using strategy=${strategyDomain}`);
+    
     passport.authenticate(`replitauth:${strategyDomain}`, {
       successReturnToOrRedirect: "/",
       failureRedirect: "/api/login",
