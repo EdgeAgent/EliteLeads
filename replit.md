@@ -1,8 +1,8 @@
-# LEAD | LEADER - AI-Powered B2B Lead Generation Platform
+# eliteleads.pro - AI-Powered B2B Lead Generation Platform
 
 ## Overview
 
-LEAD | LEADER is a comprehensive B2B lead generation and cold email marketing platform that leverages AI to automate the entire sales prospecting workflow. The application helps businesses discover high-quality leads, generate company intelligence, and create personalized cold email campaigns with advanced tracking and analytics capabilities.
+eliteleads.pro is a comprehensive B2B lead generation and cold email marketing platform that leverages AI to automate the entire sales prospecting workflow. The application helps businesses discover high-quality leads, generate company intelligence, and create personalized cold email campaigns with advanced tracking and analytics capabilities.
 
 The platform integrates multiple data sources for lead discovery, uses OpenAI's GPT-5 model for intelligent research and email personalization, and provides a complete credit-based billing system with PayPal integration. Built as a full-stack TypeScript application, it offers a modern, responsive interface for sales teams to streamline their outreach efforts.
 
