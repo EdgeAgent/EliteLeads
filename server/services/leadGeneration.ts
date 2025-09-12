@@ -3,7 +3,7 @@ import {
   generateCompanyIntelligence, 
   generateLeadQualificationScores, 
   enhanceLeadResearch 
-} from "./openai";
+} from "./gemini";
 import type { InsertLead, InsertLeadGenerationJob, LeadGenerationJob } from "@shared/schema";
 
 export interface LeadGenerationParams {
@@ -113,7 +113,8 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
       const lead = mockLeads[i];
       
       // Check if user has enough credits
-      const currentCredits = user.credits - creditsUsed;
+      const userCredits = user.credits ?? 0;
+      const currentCredits = userCredits - creditsUsed;
       if (currentCredits <= 0) {
         console.log(`User ${job.userId} ran out of credits during lead generation`);
         break;
@@ -232,7 +233,8 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
     }
 
     // Update user credits
-    await storage.updateUserCredits(job.userId, user.credits - creditsUsed);
+    const userCredits = user.credits ?? 0;
+    await storage.updateUserCredits(job.userId, userCredits - creditsUsed);
 
     // Complete the job
     await storage.updateLeadGenerationJob(jobId, {
