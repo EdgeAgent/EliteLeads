@@ -62,7 +62,7 @@ export default function Dashboard() {
         {/* Mobile header */}
         <div className="relative z-10 flex-shrink-0 flex h-16 bg-card border-b border-border lg:hidden">
           <div className="flex-1 flex justify-between px-4 items-center">
-            <h1 className="text-lg font-semibold text-foreground">LeadForge</h1>
+            <h1 className="text-lg font-semibold text-foreground">eliteleads.pro</h1>
             <div className="flex items-center space-x-4">
               <span className="text-sm font-medium text-primary">
                 {stats?.creditsUsed || 0} credits
