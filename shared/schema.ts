@@ -131,6 +131,8 @@ export const leadGenerationJobs = pgTable("lead_generation_jobs", {
   totalLeads: integer("total_leads").default(0),
   creditsUsed: integer("credits_used").default(0),
   errorMessage: text("error_message"),
+  currentStep: text("current_step"), // What the AI is currently thinking about
+  thinking: text("thinking"), // Current reasoning/analysis
   
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),

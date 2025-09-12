@@ -381,6 +381,17 @@ export default function LeadGeneration() {
                                     <span>{job.progress}% complete</span>
                                     <span>{job.totalLeads} leads found</span>
                                   </div>
+                                  {job.thinking && (
+                                    <div className="mt-3 p-3 bg-muted/50 rounded-md border-l-2 border-blue-500">
+                                      <div className="flex items-center text-xs font-medium text-blue-700 dark:text-blue-300 mb-1">
+                                        <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse" />
+                                        AI Thinking: {job.currentStep?.replace('_', ' ')}
+                                      </div>
+                                      <p className="text-sm text-foreground/80 italic">
+                                        {job.thinking}
+                                      </p>
+                                    </div>
+                                  )}
                                 </div>
                               )}
 
