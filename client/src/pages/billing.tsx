@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Separator } from "@/components/ui/separator";
 import { CreditCard, Plus, Download, DollarSign, Clock, CheckCircle, AlertCircle } from "lucide-react";
+import CreditPayPalButton from "@/components/CreditPayPalButton";
 
 export default function Billing() {
   const { toast } = useToast();
@@ -20,6 +21,8 @@ export default function Billing() {
   const queryClient = useQueryClient();
   const [creditAmount, setCreditAmount] = useState("100");
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [showPayPal, setShowPayPal] = useState(false);
+  const [pendingCredits, setPendingCredits] = useState(0);
 
   // Redirect to home if not authenticated
   useEffect(() => {
@@ -46,32 +49,25 @@ export default function Billing() {
     enabled: isAuthenticated,
   });
 
-  const creditPurchaseMutation = useMutation({
-    mutationFn: async (credits: number) => {
-      const response = await apiRequest("POST", "/api/credits/purchase", { credits });
+  const creditConfirmationMutation = useMutation({
+    mutationFn: async ({ credits, orderId }: { credits: number; orderId: string }) => {
+      const response = await apiRequest("POST", "/api/credits/confirm-payment", { credits, orderId });
       return response.json();
     },
     onSuccess: (data) => {
-      // In a real implementation, you would redirect to Stripe checkout
-      // or open a payment modal with the clientSecret
+      queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/analytics/transactions"] });
       toast({
-        title: "Payment Processing",
-        description: "Redirecting to secure payment...",
+        title: "Payment Successful",
+        description: `${pendingCredits} credits have been added to your account.`,
       });
-      
-      // Mock payment success for demo
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-        queryClient.invalidateQueries({ queryKey: ["/api/analytics/transactions"] });
-        toast({
-          title: "Payment Successful",
-          description: `${creditAmount} credits have been added to your account.`,
-        });
-        setIsProcessingPayment(false);
-      }, 2000);
+      setIsProcessingPayment(false);
+      setShowPayPal(false);
+      setPendingCredits(0);
     },
     onError: (error) => {
       setIsProcessingPayment(false);
+      setShowPayPal(false);
       if (isUnauthorizedError(error)) {
         toast({
           title: "Unauthorized",
@@ -85,7 +81,7 @@ export default function Billing() {
       }
       toast({
         title: "Payment Failed",
-        description: error.message || "Failed to process payment",
+        description: error.message || "Failed to confirm payment",
         variant: "destructive",
       });
     },
@@ -102,8 +98,34 @@ export default function Billing() {
       return;
     }
 
+    setPendingCredits(credits);
+    setShowPayPal(true);
     setIsProcessingPayment(true);
-    creditPurchaseMutation.mutate(credits);
+  };
+
+  const handlePayPalSuccess = (orderId: string, credits: number) => {
+    // Call the credit confirmation endpoint
+    creditConfirmationMutation.mutate({ credits, orderId });
+  };
+
+  const handlePayPalError = (error: any) => {
+    console.error("PayPal Error:", error);
+    setIsProcessingPayment(false);
+    setShowPayPal(false);
+    toast({
+      title: "Payment Failed",
+      description: "There was an error processing your payment. Please try again.",
+      variant: "destructive",
+    });
+  };
+
+  const handlePayPalCancel = () => {
+    setIsProcessingPayment(false);
+    setShowPayPal(false);
+    toast({
+      title: "Payment Canceled",
+      description: "Payment was canceled. You can try again when ready.",
+    });
   };
 
   const getTransactionIcon = (type: string) => {
@@ -302,24 +324,53 @@ export default function Billing() {
                           <div className="text-sm text-muted-foreground">
                             You'll get <strong>{creditAmount || 0} credits</strong> for lead generation and email creation
                           </div>
-                          <Button
-                            onClick={handlePurchaseCredits}
-                            disabled={isProcessingPayment || !creditAmount || parseInt(creditAmount) <= 0}
-                            className="px-8"
-                            data-testid="button-purchase-credits"
-                          >
-                            {isProcessingPayment ? (
-                              <>
-                                <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
-                                Processing...
-                              </>
-                            ) : (
-                              <>
-                                <Plus className="mr-2 h-4 w-4" />
-                                Purchase Credits
-                              </>
-                            )}
-                          </Button>
+                          {!showPayPal ? (
+                            <Button
+                              onClick={handlePurchaseCredits}
+                              disabled={isProcessingPayment || !creditAmount || parseInt(creditAmount) <= 0}
+                              className="px-8"
+                              data-testid="button-purchase-credits"
+                            >
+                              {isProcessingPayment ? (
+                                <>
+                                  <div className="animate-spin w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full mr-2" />
+                                  Processing...
+                                </>
+                              ) : (
+                                <>
+                                  <Plus className="mr-2 h-4 w-4" />
+                                  Purchase Credits
+                                </>
+                              )}
+                            </Button>
+                          ) : (
+                            <div className="flex flex-col items-end space-y-2">
+                              <div className="text-sm text-muted-foreground">
+                                Complete payment with PayPal
+                              </div>
+                              <CreditPayPalButton
+                                amount={(parseInt(creditAmount || "0") * 0.1).toFixed(2)}
+                                currency="USD"
+                                intent="capture"
+                                credits={pendingCredits}
+                                onSuccess={handlePayPalSuccess}
+                                onError={handlePayPalError}
+                                onCancel={handlePayPalCancel}
+                              />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => {
+                                  setShowPayPal(false);
+                                  setIsProcessingPayment(false);
+                                }}
+                                className="text-xs"
+                                data-testid="button-cancel-payment"
+                              >
+                                Cancel
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </CardContent>
