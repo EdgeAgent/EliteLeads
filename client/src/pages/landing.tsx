@@ -14,7 +14,7 @@ export default function Landing() {
               <div className="w-8 h-8 credit-gradient rounded-lg flex items-center justify-center">
                 <Zap className="w-5 h-5 text-white" />
               </div>
-              <h1 className="text-xl font-bold text-foreground">LeadForge</h1>
+              <h1 className="text-xl font-bold text-foreground">LEAD | LEADER</h1>
             </div>
             <Button 
               onClick={() => window.location.href = "/api/login"}
@@ -186,7 +186,7 @@ export default function Landing() {
             Ready to Transform Your Lead Generation?
           </h2>
           <p className="text-xl mb-8 opacity-90">
-            Join thousands of sales teams already using LeadForge to generate more qualified leads and close more deals.
+            Join thousands of sales teams already using LEAD | LEADER to generate more qualified leads and close more deals.
           </p>
           <Button 
             size="lg" 
@@ -206,10 +206,10 @@ export default function Landing() {
             <div className="w-6 h-6 credit-gradient rounded-lg flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="text-lg font-semibold">LeadForge</span>
+            <span className="text-lg font-semibold">LEAD | LEADER</span>
           </div>
           <p className="text-muted-foreground">
-            © 2024 LeadForge. All rights reserved.
+            © 2024 LEAD | LEADER. All rights reserved.
           </p>
         </div>
       </footer>
