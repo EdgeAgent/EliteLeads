@@ -21,7 +21,7 @@ import { eq, desc, and, sql } from "drizzle-orm";
 export interface IStorage {
   // User operations (mandatory for Replit Auth)
   getUser(id: string): Promise<User | undefined>;
-  upsertUser(user: UpsertUser): Promise<User>;
+  upsertUser(user: UpsertUser & { id: string }): Promise<User>;
   updateUserCredits(userId: string, credits: number): Promise<User>;
   updateUserStripeInfo(userId: string, stripeCustomerId: string, stripeSubscriptionId?: string): Promise<User>;
   
@@ -62,32 +62,26 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async upsertUser(userData: UpsertUser): Promise<User> {
-    // Check if user already exists
-    const existingUser = await this.getUser(userData.id!);
-    
-    if (existingUser) {
-      // User exists, update their information but preserve credits
-      const [user] = await db
-        .update(users)
-        .set({
-          ...userData,
+  async upsertUser(userData: UpsertUser & { id: string }): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values({
+        ...userData,
+        credits: 25, // Signup bonus for new users
+      })
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          email: userData.email,
+          firstName: userData.firstName,
+          lastName: userData.lastName,
+          profileImageUrl: userData.profileImageUrl,
           updatedAt: new Date(),
-        })
-        .where(eq(users.id, userData.id!))
-        .returning();
-      return user;
-    } else {
-      // New user signup, give them 25 credits bonus
-      const [user] = await db
-        .insert(users)
-        .values({
-          ...userData,
-          credits: 25, // Signup bonus
-        })
-        .returning();
-      return user;
-    }
+          // Explicitly don't update credits to preserve existing balance
+        },
+      })
+      .returning();
+    return user;
   }
 
   async updateUserCredits(userId: string, credits: number): Promise<User> {
