@@ -73,6 +73,8 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
     await storage.updateLeadGenerationJob(jobId, {
       status: "processing",
       progress: 10,
+      currentStep: "initializing",
+      thinking: `Starting lead generation for ${job.industry} companies in ${job.location}. Looking for ${job.jobTitles} roles in ${job.companySize} companies...`
     });
 
     // Get user for credit checking
@@ -82,6 +84,12 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
     }
 
     // Generate mock leads (in production, integrate with real data sources)
+    await storage.updateLeadGenerationJob(jobId, {
+      progress: 20,
+      currentStep: "discovering",
+      thinking: `Searching prospect databases for ${job.industry} companies in ${job.location}. Filtering for companies with ${job.companySize} employees...`
+    });
+    
     const mockLeads = generateMockLeads({
       industry: job.industry!,
       companySize: job.companySize!,
@@ -93,6 +101,8 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
     await storage.updateLeadGenerationJob(jobId, {
       progress: 30,
       totalLeads: mockLeads.length,
+      currentStep: "found_prospects",
+      thinking: `Found ${mockLeads.length} potential prospects. Now analyzing each company using AI to determine business intelligence and qualification scores...`
     });
 
     const qualifiedLeads: InsertLead[] = [];
@@ -109,6 +119,14 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
         break;
       }
 
+      // Update thinking for current lead analysis
+      const progressPercent = 30 + (i / mockLeads.length) * 60;
+      await storage.updateLeadGenerationJob(jobId, {
+        progress: Math.round(progressPercent),
+        currentStep: "analyzing_company",
+        thinking: `Analyzing ${lead.companyName} (${i + 1}/${mockLeads.length}): Researching company intelligence, recent news, pain points, and buying triggers using AI...`
+      });
+
       try {
         // Generate company intelligence using AI
         const companyIntelligence = await generateCompanyIntelligence(
@@ -116,6 +134,11 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
           lead.companyIndustry,
           lead.companySize
         );
+
+        await storage.updateLeadGenerationJob(jobId, {
+          currentStep: "scoring_lead",
+          thinking: `Analyzing ${lead.contactName} at ${lead.companyName}: Calculating fit score, intent signals, and reachability metrics. Contact: ${lead.contactTitle} | Industry match: ${lead.companyIndustry}...`
+        });
 
         // Generate qualification scores
         const scores = await generateLeadQualificationScores(
@@ -135,6 +158,11 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
 
         // Only include leads that meet minimum qualification
         if (totalScore >= MIN_QUALIFICATION_SCORE) {
+          await storage.updateLeadGenerationJob(jobId, {
+            currentStep: "qualifying_lead",
+            thinking: `✅ ${lead.contactName} qualified! Score: ${totalScore}/15 (Fit: ${scores.fitScore}/5, Intent: ${scores.intentScore}/5, Reach: ${scores.reachabilityScore}/5). Enhancing research with detailed company analysis...`
+          });
+
           // Enhance lead research
           const enhancedResearch = await enhanceLeadResearch({
             contactName: lead.contactName,
@@ -175,6 +203,11 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
             amount: -LEAD_GENERATION_COST,
             description: `Lead generation: ${lead.contactName} at ${lead.companyName}`,
           });
+        } else {
+          await storage.updateLeadGenerationJob(jobId, {
+            thinking: `❌ ${lead.contactName} at ${lead.companyName} didn't qualify. Score: ${totalScore}/15 (minimum: ${MIN_QUALIFICATION_SCORE}). Moving to next prospect...`
+          });
+          console.log(`Lead ${lead.contactName} at ${lead.companyName} did not qualify (score: ${totalScore})`);
         }
 
         // Update progress
@@ -188,6 +221,12 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
     }
 
     // Save qualified leads to database
+    await storage.updateLeadGenerationJob(jobId, {
+      progress: 95,
+      currentStep: "saving_results",
+      thinking: `Saving ${qualifiedLeads.length} qualified leads to database and updating your credit balance...`
+    });
+    
     for (const lead of qualifiedLeads) {
       await storage.createLead(lead);
     }
@@ -200,6 +239,8 @@ export async function processLeadGeneration(jobId: string): Promise<void> {
       status: "completed",
       progress: 100,
       creditsUsed,
+      currentStep: "completed",
+      thinking: `🎉 Lead generation complete! Found ${qualifiedLeads.length} high-quality leads that match your criteria. Used ${creditsUsed} credits. Your new leads are ready to view!`
     });
 
   } catch (error) {

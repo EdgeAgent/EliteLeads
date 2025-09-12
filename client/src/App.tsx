@@ -35,7 +35,9 @@ function Router() {
       ) : (
         <>
           <Route path="/" component={Dashboard} />
+          <Route path="/dashboard" component={Dashboard} />
           <Route path="/leads" component={LeadGeneration} />
+          <Route path="/lead-generation" component={LeadGeneration} />
           <Route path="/campaigns" component={Campaigns} />
           <Route path="/prospects" component={Prospects} />
           <Route path="/analytics" component={Analytics} />
